@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "declarationMap": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "src/cubism/**/*.ts",
+    "src/lib/**/*.ts",
+    "src/lib/**/*.tsx",
+    "src/global.d.ts"
+  ]
+}

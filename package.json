@@ -1,0 +1,64 @@
+{
+  "name": "live2d-react",
+  "private": false,
+  "version": "0.1.0",
+  "description": "React component wrapper for Live2D Cubism models with user-supplied Core and assets.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "main": "./dist/lib/index.js",
+  "module": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/index.d.ts",
+      "import": "./dist/lib/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-framework.mjs",
+    "prepare": "npm run build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "vite": "^8.0.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "keywords": [
+    "live2d",
+    "cubism",
+    "react",
+    "vtuber"
+  ],
+  "author": "Vivo Xu <git@vivoxu.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hivivo/live2d-react.git"
+  },
+  "homepage": "https://github.com/hivivo/live2d-react",
+  "bugs": {
+    "url": "https://github.com/hivivo/live2d-react/issues"
+  }
+}
