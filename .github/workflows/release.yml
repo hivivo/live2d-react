@@ -32,12 +32,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -59,6 +59,7 @@ jobs:
           echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Create release pull request
+        id: release_pr
         uses: peter-evans/create-pull-request@v7
         with:
           branch: release/v${{ steps.version.outputs.value }}
@@ -73,13 +74,26 @@ jobs:
             - publish the package to npm via Trusted Publisher
           delete-branch: true
 
+      - name: Approve release pull request
+        if: steps.release_pr.outputs.pull-request-number != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr review "${{ steps.release_pr.outputs.pull-request-number }}" --approve
+
+      - name: Enable auto-merge for release pull request
+        if: steps.release_pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr merge "${{ steps.release_pr.outputs.pull-request-number }}" --auto --squash
+
   publish_release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -122,9 +136,9 @@ jobs:
 
       - name: Set up Node.js
         if: steps.release.outputs.should_publish == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
 
