@@ -109,13 +109,19 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Stop when this version is already released
-        if: steps.tag.outputs.exists == 'true' || steps.npm.outputs.exists == 'true'
+      - name: Decide whether to publish
+        id: release
         run: |
-          echo "Version v${{ steps.package.outputs.version }} is already released."
-          exit 0
+          if [ "${{ steps.tag.outputs.exists }}" = "true" ] || [ "${{ steps.npm.outputs.exists }}" = "true" ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "Version v${{ steps.package.outputs.version }} is already released."
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "Version v${{ steps.package.outputs.version }} will be released."
+          fi
 
       - name: Set up Node.js
+        if: steps.release.outputs.should_publish == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -123,25 +129,32 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
+        if: steps.release.outputs.should_publish == 'true'
         run: npm ci
 
       - name: Lint
+        if: steps.release.outputs.should_publish == 'true'
         run: npm run lint
 
       - name: Build
+        if: steps.release.outputs.should_publish == 'true'
         run: npm run build
 
       - name: Create tag
+        if: steps.release.outputs.should_publish == 'true'
         run: git tag "v${{ steps.package.outputs.version }}"
 
       - name: Push tag
+        if: steps.release.outputs.should_publish == 'true'
         run: git push origin "v${{ steps.package.outputs.version }}"
 
       - name: Create GitHub release
+        if: steps.release.outputs.should_publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package.outputs.version }}
           generate_release_notes: true
 
       - name: Publish to npm
+        if: steps.release.outputs.should_publish == 'true'
         run: npm publish --access public
