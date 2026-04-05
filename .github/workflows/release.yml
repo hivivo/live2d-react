@@ -74,13 +74,6 @@ jobs:
             - publish the package to npm via Trusted Publisher
           delete-branch: true
 
-      - name: Approve release pull request
-        if: steps.release_pr.outputs.pull-request-number != ''
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh pr review "${{ steps.release_pr.outputs.pull-request-number }}" --approve
-
       - name: Enable auto-merge for release pull request
         if: steps.release_pr.outputs.pull-request-number != ''
         env:
