@@ -105,6 +105,16 @@ jobs:
           echo "name=${NAME}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Read previous package version
+        id: previous
+        run: |
+          if git cat-file -e "${{ github.event.before }}:package.json" 2>/dev/null; then
+            VERSION=$(git show "${{ github.event.before }}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check for existing tag
         id: tag
         run: |
@@ -126,12 +136,15 @@ jobs:
       - name: Decide whether to publish
         id: release
         run: |
-          if [ "${{ steps.tag.outputs.exists }}" = "true" ] || [ "${{ steps.npm.outputs.exists }}" = "true" ]; then
+          if [ "${{ steps.previous.outputs.version }}" = "${{ steps.package.outputs.version }}" ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "Package version did not change on this push."
+          elif [ "${{ steps.tag.outputs.exists }}" = "true" ] || [ "${{ steps.npm.outputs.exists }}" = "true" ]; then
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
             echo "Version v${{ steps.package.outputs.version }} is already released."
           else
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "Version v${{ steps.package.outputs.version }} will be released."
+            echo "Version changed from v${{ steps.previous.outputs.version }} to v${{ steps.package.outputs.version }} and will be released."
           fi
 
       - name: Set up Node.js
