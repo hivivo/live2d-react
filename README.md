@@ -40,6 +40,14 @@ Then:
 1. add `live2dcubismcore.min.js` to your app's public assets
 2. add your model folder to your app's public assets
 
+## Playground
+
+This repo also includes a Vite playground app for trying hosted models and the
+render normalization controls.
+
+- `npm run dev`: run the local playground
+- `npm run build:demo`: build the playground as a static site
+
 ## Usage
 
 ```tsx
@@ -51,6 +59,10 @@ export function Example() {
       modelJsonPath="/models/Hiyori/Hiyori.model3.json"
       coreScriptSrc="/cubism/core/live2dcubismcore.min.js"
       style={{ width: 420, height: 420 }}
+      renderOptions={{
+        fitMode: 'height',
+        anchorY: 'bottom'
+      }}
     />
   );
 }
@@ -64,6 +76,28 @@ export function Example() {
 - `tapBodyMotionGroup`: defaults to `TapBody`
 - `headHitAreaName`: defaults to `Head`
 - `bodyHitAreaName`: defaults to `Body`
+- `renderOptions`: optional render normalization controls
+
+`renderOptions` supports:
+
+- `fitMode`: `none`, `contain`, `cover`, `width`, or `height`
+- `anchorX`: `left`, `center`, or `right`
+- `anchorY`: `top`, `center`, or `bottom`
+- `offsetX` / `offsetY`: extra logical-scene offsets after fitting and anchoring
+- `zoom`: extra scale multiplier applied after fit mode
+
+For keeping different models standing on the same ground line, a good default is:
+
+```tsx
+<Live2D
+  modelJsonPath="/models/Hiyori/Hiyori.model3.json"
+  coreScriptSrc="/cubism/core/live2dcubismcore.min.js"
+  renderOptions={{
+    fitMode: 'height',
+    anchorY: 'bottom'
+  }}
+/>
+```
 
 ## Important
 

@@ -1,44 +1,300 @@
-.demo-shell {
+.playground-shell {
   min-height: 100vh;
+  padding: 1.5rem;
   display: grid;
-  place-items: center;
-  padding: 2rem;
+  gap: 1.25rem;
+  align-content: start;
 }
 
-.copy {
-  width: min(760px, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.hero-panel,
+.viewer-card,
+.controls-card,
+.code-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
-  padding: 2rem;
   background:
-    radial-gradient(circle at top, rgba(205, 123, 93, 0.18), transparent 42%),
-    rgba(17, 16, 20, 0.82);
+    radial-gradient(circle at top, rgba(208, 124, 93, 0.16), transparent 40%),
+    rgba(15, 17, 23, 0.82);
   backdrop-filter: blur(16px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
 }
 
-.eyebrow {
-  margin: 0 0 0.75rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  color: #d0a18a;
+.hero-panel {
+  padding: 1.15rem;
+  display: grid;
+  align-items: start;
 }
 
-.copy h1 {
+.hero-copy {
+  display: grid;
+  gap: 0.3rem;
+  max-width: 78rem;
+}
+
+.hero-copy h1,
+.panel-header h2,
+.viewer-header h2 {
   margin: 0;
-  font-size: clamp(2.2rem, 4vw, 3.6rem);
-  line-height: 0.96;
+}
+
+.hero-copy h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.98;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  color: #dca48b;
 }
 
 .lede,
-.note {
-  color: rgba(245, 239, 230, 0.78);
+.hint,
+.panel-header p,
+.viewer-header p {
+  margin: 0;
+  line-height: 1.24;
+  color: rgba(245, 239, 230, 0.74);
 }
 
-.copy pre {
+.snippet-actions button,
+.preset-tab {
+  border: 0;
+  cursor: pointer;
+}
+
+.snippet-actions button {
+  border-radius: 999px;
+  padding: 0.85rem 1.15rem;
+  background: linear-gradient(135deg, #f0b79f 0%, #c77656 100%);
+  color: #211411;
+  font-weight: 700;
+}
+.snippet-actions button,
+.preset-tab {
+  border: 0;
+  cursor: pointer;
+}
+
+.playground-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 420px);
+  align-items: start;
+}
+
+.viewer-column,
+.controls-column {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+}
+
+.viewer-column {
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.4fr);
+  align-items: start;
+}
+
+.viewer-card,
+.controls-card,
+.code-card {
+  padding: 1.15rem;
+}
+
+.viewer-header,
+.panel-header {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.viewer-header p,
+.panel-header p {
+  margin: 0;
+}
+
+.viewer-frame {
+  position: relative;
+  height: min(68vh, 760px);
+  min-height: 420px;
+  border-radius: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 244, 232, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(87, 121, 193, 0.14) 0%, rgba(12, 13, 18, 0.12) 58%),
+    rgba(8, 9, 14, 0.84);
+}
+
+.ground-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12%;
+  border-top: 2px dashed rgba(240, 183, 159, 0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.viewer-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.viewer-stage > div,
+.viewer-stage canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.controls-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.asset-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.apply-button {
+  width: fit-content;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  background: rgba(240, 183, 159, 0.14);
+  color: #ffe8db;
+  cursor: pointer;
+}
+
+.control-group {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.preset-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.preset-tab {
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border: 1px solid transparent;
+}
+
+.preset-tab.is-active {
+  border-color: rgba(240, 183, 159, 0.7);
+  background: rgba(240, 183, 159, 0.1);
+}
+
+.custom-model-row {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.controls-card label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.controls-card span {
+  font-size: 0.92rem;
+  color: rgba(245, 239, 230, 0.86);
+}
+
+.controls-card input,
+.controls-card select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+  background: rgba(12, 13, 18, 0.9);
+  color: inherit;
+}
+
+.controls-card input[type='range'] {
+  padding: 0;
+}
+
+.inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.code-card pre {
+  margin: 0;
+  display: block;
   overflow: auto;
   padding: 1rem;
   border-radius: 18px;
   background: rgba(0, 0, 0, 0.28);
   color: #ffe8db;
+  white-space: pre-wrap;
+}
+
+.snippet-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.snippet-actions p {
+  margin: 0;
+  color: rgba(245, 239, 230, 0.74);
+}
+
+@media (max-width: 1100px) {
+  .playground-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .viewer-column {
+    grid-template-columns: 1fr;
+  }
+
+  .viewer-frame {
+    height: min(62vh, 640px);
+    min-height: 380px;
+  }
+}
+
+@media (max-width: 640px) {
+  .playground-shell {
+    padding: 1rem;
+  }
+
+  .hero-panel,
+  .viewer-card,
+  .controls-card,
+  .code-card {
+    border-radius: 22px;
+  }
+
+  .viewer-frame {
+    height: 52vh;
+    min-height: 320px;
+  }
+
+  .inline-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-model-row {
+    grid-template-columns: 1fr;
+  }
 }

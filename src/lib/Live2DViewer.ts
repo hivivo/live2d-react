@@ -11,6 +11,7 @@ import { LAppSubdelegate } from '../cubism/runtime/lappsubdelegate';
 import { LAppTextureManager } from '../cubism/runtime/lapptexturemanager';
 import { TouchManager } from '../cubism/runtime/touchmanager';
 import { ensureCubismCore } from './loadCubismCore';
+import type { Live2DRenderOptions } from './Live2D';
 import { resolveLive2DModel } from './model';
 
 type Live2DViewerOptions = {
@@ -20,6 +21,14 @@ type Live2DViewerOptions = {
   tapBodyMotionGroup: string;
   headHitAreaName: string;
   bodyHitAreaName: string;
+  renderOptions?: Live2DRenderOptions;
+};
+
+type ModelBounds = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
 };
 
 let frameworkBooted = false;
@@ -55,6 +64,12 @@ export class Live2DViewer {
   private animationFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private disposed = false;
+  private renderOptions: Live2DRenderOptions | undefined;
+  private rawModelMatrix: Float32Array | null = null;
+  private logicalLeft = -1;
+  private logicalRight = 1;
+  private logicalTop = 1;
+  private logicalBottom = -1;
 
   public constructor({
     canvas,
@@ -62,7 +77,8 @@ export class Live2DViewer {
     idleMotionGroup,
     tapBodyMotionGroup,
     headHitAreaName,
-    bodyHitAreaName
+    bodyHitAreaName,
+    renderOptions
   }: Live2DViewerOptions) {
     this.canvas = canvas;
     this.coreScriptSrc = coreScriptSrc;
@@ -70,6 +86,7 @@ export class Live2DViewer {
     this.tapBodyMotionGroup = tapBodyMotionGroup;
     this.headHitAreaName = headHitAreaName;
     this.bodyHitAreaName = bodyHitAreaName;
+    this.renderOptions = renderOptions;
     this.canvas.style.touchAction = 'none';
   }
 
@@ -107,6 +124,7 @@ export class Live2DViewer {
     this.canvas.dataset.modelJsonPath = modelJsonPath;
     this.textureManager.releaseTextures();
     this.model?.release();
+    this.rawModelMatrix = null;
 
     const nextModel = new LAppModel();
     nextModel.setSubdelegate(this.host);
@@ -115,6 +133,11 @@ export class Live2DViewer {
     nextModel.loadAssets(resolvedModel.modelDirUrl, resolvedModel.modelJsonFile);
 
     this.model = nextModel;
+    this.resize();
+  }
+
+  public setRenderOptions(renderOptions?: Live2DRenderOptions): void {
+    this.renderOptions = renderOptions;
     this.resize();
   }
 
@@ -204,6 +227,11 @@ export class Live2DViewer {
     const bottom = LAppDefine.ViewLogicalLeft;
     const top = LAppDefine.ViewLogicalRight;
 
+    this.logicalLeft = left;
+    this.logicalRight = right;
+    this.logicalBottom = bottom;
+    this.logicalTop = top;
+
     this.viewMatrix.setScreenRect(left, right, bottom, top);
     this.viewMatrix.scale(LAppDefine.ViewScale, LAppDefine.ViewScale);
     this.viewMatrix.setMaxScale(LAppDefine.ViewMaxScale);
@@ -248,6 +276,8 @@ export class Live2DViewer {
       return;
     }
 
+    this.applyRenderOptions();
+
     CubismWebGLOffscreenManager.getInstance().beginFrameProcess(gl);
 
     const projection = new CubismMatrix44();
@@ -256,7 +286,6 @@ export class Live2DViewer {
         this.model.getModel().getCanvasWidth() > 1.0 &&
         this.canvas.width < this.canvas.height
       ) {
-        this.model.getModelMatrix().setWidth(2.0);
         projection.scale(1.0, this.canvas.width / this.canvas.height);
       } else {
         projection.scale(this.canvas.height / this.canvas.width, 1.0);
@@ -326,5 +355,161 @@ export class Live2DViewer {
   private transformViewY(deviceY: number): number {
     const screenY = this.deviceToScreen.transformY(deviceY);
     return this.viewMatrix.invertTransformY(screenY);
+  }
+
+  private applyRenderOptions() {
+    if (!this.model?.isReadyToRender()) {
+      return;
+    }
+
+    const modelMatrix = this.model.getModelMatrix();
+    if (!modelMatrix) {
+      return;
+    }
+
+    if (!this.rawModelMatrix) {
+      this.rawModelMatrix = new Float32Array(modelMatrix.getArray());
+    }
+
+    modelMatrix.setMatrix(this.rawModelMatrix);
+    this.applyDefaultModelFit(modelMatrix);
+
+    if (!this.hasActiveRenderOptions()) {
+      return;
+    }
+
+    const bounds = this.model.getDrawableBounds();
+    if (!bounds) {
+      return;
+    }
+
+    const baselineMatrix = new Float32Array(modelMatrix.getArray());
+    const baseScaleX = baselineMatrix[0];
+    const baseScaleY = baselineMatrix[5];
+    const baseTranslateX = baselineMatrix[12];
+    const baseTranslateY = baselineMatrix[13];
+    const fitMode = this.renderOptions?.fitMode ?? 'none';
+    const anchorX = this.renderOptions?.anchorX;
+    const anchorY = this.renderOptions?.anchorY ?? 'center';
+    const zoom = this.renderOptions?.zoom ?? 1;
+
+    const baseBounds = this.transformBounds(bounds, modelMatrix);
+    const fittedScale = this.getFitScale(baseBounds, fitMode);
+    const scale = fittedScale * zoom;
+
+    modelMatrix.scale(baseScaleX * scale, baseScaleY * scale);
+    modelMatrix.translate(baseTranslateX, baseTranslateY);
+
+    const scaledBounds = this.transformBounds(bounds, modelMatrix);
+    modelMatrix.translate(
+      baseTranslateX +
+        (anchorX ? this.getHorizontalDelta(anchorX, scaledBounds) : 0) +
+        (this.renderOptions?.offsetX ?? 0),
+      baseTranslateY +
+        this.getVerticalDelta(anchorY, scaledBounds) +
+        (this.renderOptions?.offsetY ?? 0)
+    );
+  }
+
+  private applyDefaultModelFit(modelMatrix: CubismMatrix44) {
+    const currentModel = this.model;
+    if (!currentModel?.getModel()) {
+      return;
+    }
+
+    if (
+      currentModel.getModel().getCanvasWidth() > 1.0 &&
+      this.canvas.width < this.canvas.height
+    ) {
+      const currentModelMatrix = currentModel.getModelMatrix();
+      currentModelMatrix.setWidth(2.0);
+      modelMatrix.setMatrix(currentModelMatrix.getArray());
+    }
+  }
+
+  private hasActiveRenderOptions(): boolean {
+    return Boolean(
+      this.renderOptions &&
+        (this.renderOptions.fitMode ||
+          this.renderOptions.anchorX ||
+          this.renderOptions.anchorY ||
+          this.renderOptions.offsetX !== undefined ||
+          this.renderOptions.offsetY !== undefined ||
+          this.renderOptions.zoom !== undefined)
+    );
+  }
+
+  private transformBounds(bounds: ModelBounds, matrix: CubismMatrix44): ModelBounds {
+    return {
+      left: matrix.transformX(bounds.left),
+      right: matrix.transformX(bounds.right),
+      top: matrix.transformY(bounds.top),
+      bottom: matrix.transformY(bounds.bottom)
+    };
+  }
+
+  private getFitScale(
+    bounds: ModelBounds,
+    fitMode: NonNullable<Live2DRenderOptions['fitMode']>
+  ) {
+    if (fitMode === 'none') {
+      return 1;
+    }
+
+    const width = Math.max(bounds.right - bounds.left, Number.EPSILON);
+    const height = Math.max(bounds.top - bounds.bottom, Number.EPSILON);
+    const availableWidth = this.logicalRight - this.logicalLeft;
+    const availableHeight = this.logicalTop - this.logicalBottom;
+    const scaleX = availableWidth / width;
+    const scaleY = availableHeight / height;
+
+    switch (fitMode) {
+      case 'contain':
+        return Math.min(scaleX, scaleY);
+      case 'cover':
+        return Math.max(scaleX, scaleY);
+      case 'width':
+        return scaleX;
+      case 'height':
+        return scaleY;
+      default:
+        return 1;
+    }
+  }
+
+  private getHorizontalDelta(
+    anchorX: NonNullable<Live2DRenderOptions['anchorX']>,
+    bounds: ModelBounds
+  ): number {
+    switch (anchorX) {
+      case 'left':
+        return this.logicalLeft - bounds.left;
+      case 'right':
+        return this.logicalRight - bounds.right;
+      case 'center':
+      default:
+        return (
+          (this.logicalLeft + this.logicalRight) * 0.5 -
+          (bounds.left + bounds.right) * 0.5
+        );
+    }
+  }
+
+  private getVerticalDelta(
+    anchorY: NonNullable<Live2DRenderOptions['anchorY']>,
+    bounds: ModelBounds
+  ): number {
+    switch (anchorY) {
+      case 'top':
+        return this.logicalTop - bounds.top;
+      case 'bottom':
+        return this.logicalBottom - bounds.bottom;
+      case 'center':
+      default:
+        return (
+          (this.logicalTop + this.logicalBottom) * 0.5 -
+          (bounds.top + bounds.bottom) * 0.5
+        );
+    }
   }
 }

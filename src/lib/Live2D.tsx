@@ -3,6 +3,25 @@ import { useEffect, useRef, useState } from 'react';
 
 import { ensureCubismCore } from './loadCubismCore';
 
+export type Live2DRenderFitMode =
+  | 'none'
+  | 'contain'
+  | 'cover'
+  | 'width'
+  | 'height';
+
+export type Live2DHorizontalAnchor = 'left' | 'center' | 'right';
+export type Live2DVerticalAnchor = 'top' | 'center' | 'bottom';
+
+export type Live2DRenderOptions = {
+  fitMode?: Live2DRenderFitMode;
+  anchorX?: Live2DHorizontalAnchor;
+  anchorY?: Live2DVerticalAnchor;
+  offsetX?: number;
+  offsetY?: number;
+  zoom?: number;
+};
+
 export type Live2DProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   modelJsonPath: string;
   coreScriptSrc?: string;
@@ -11,11 +30,13 @@ export type Live2DProps = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   headHitAreaName?: string;
   bodyHitAreaName?: string;
   canvasStyle?: CSSProperties;
+  renderOptions?: Live2DRenderOptions;
 };
 
 type ViewerInstance = {
   mount(): Promise<void>;
   setModel(modelJsonPath: string): Promise<void>;
+  setRenderOptions(renderOptions?: Live2DRenderOptions): void;
   dispose(): void;
 };
 
@@ -28,12 +49,16 @@ export function Live2D({
   bodyHitAreaName = 'Body',
   style,
   canvasStyle,
+  renderOptions,
   ...rest
 }: Live2DProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewerRef = useRef<ViewerInstance | null>(null);
   const initialModelJsonPathRef = useRef(modelJsonPath);
+  const latestRenderOptionsRef = useRef(renderOptions);
   const [error, setError] = useState<string | null>(null);
+
+  latestRenderOptionsRef.current = renderOptions;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,7 +82,8 @@ export function Live2D({
           idleMotionGroup,
           tapBodyMotionGroup,
           headHitAreaName,
-          bodyHitAreaName
+          bodyHitAreaName,
+          renderOptions: latestRenderOptionsRef.current
         });
         viewerRef.current = viewer;
 
@@ -100,6 +126,10 @@ export function Live2D({
       setError(message);
     });
   }, [modelJsonPath]);
+
+  useEffect(() => {
+    viewerRef.current?.setRenderOptions(renderOptions);
+  }, [renderOptions]);
 
   return (
     <div
