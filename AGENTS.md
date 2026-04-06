@@ -123,13 +123,18 @@ Do not reintroduce `shaderPath` unless there is a strong technical reason.
 
 ## Core and Licensing Rules
 
-This repo does not bundle:
+The published library package does not bundle:
 
 - Live2D Cubism Core
 - third-party model assets
 
-Do not add Core or model assets to this public repo unless licensing has been
-reviewed carefully.
+For avoidance of doubt:
+
+- the npm package published from this repo must not include Core or model assets
+- the demo app in `public/` may include Core and sample model assets when they
+  are intentionally added for the playground and their license terms have been
+  reviewed
+- keep the distinction between demo assets and published library contents clear
 
 Remember:
 
@@ -194,7 +199,8 @@ Before publishing:
 3. run `npm pack --dry-run`
 4. confirm README examples are still correct
 5. confirm `package.json` metadata is correct
-6. confirm no Core or model assets were accidentally added
+6. confirm no Core or model assets were accidentally added to the published
+   library package
 7. confirm a real consumer app can still render a model
 
 ## Practical Rule of Thumb
