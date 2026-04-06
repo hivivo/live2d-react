@@ -86,6 +86,78 @@ enum LoadStep {
  * モデル生成、機能コンポーネント生成、更新処理とレンダリングの呼び出しを行う。
  */
 export class LAppModel extends CubismUserModel {
+  public isReadyToRender(): boolean {
+    return (
+      this._model != null &&
+      this._modelMatrix != null &&
+      this._state == LoadStep.CompleteSetup
+    );
+  }
+
+  public getDrawableBounds():
+    | {
+        left: number;
+        right: number;
+        top: number;
+        bottom: number;
+      }
+    | null {
+    if (this._model == null) {
+      return null;
+    }
+
+    const drawableCount = this._model.getDrawableCount();
+    if (drawableCount === 0) {
+      return null;
+    }
+
+    let left = Number.POSITIVE_INFINITY;
+    let right = Number.NEGATIVE_INFINITY;
+    let top = Number.NEGATIVE_INFINITY;
+    let bottom = Number.POSITIVE_INFINITY;
+
+    for (let drawableIndex = 0; drawableIndex < drawableCount; drawableIndex++) {
+      if (
+        !this._model.getDrawableDynamicFlagIsVisible(drawableIndex) ||
+        this._model.getDrawableOpacity(drawableIndex) <= 0
+      ) {
+        continue;
+      }
+
+      const vertexCount = this._model.getDrawableVertexCount(drawableIndex);
+      const vertices = this._model.getDrawableVertices(drawableIndex);
+
+      for (let vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
+        const x = vertices[vertexIndex * 2];
+        const y = vertices[vertexIndex * 2 + 1];
+
+        if (x < left) {
+          left = x;
+        }
+        if (x > right) {
+          right = x;
+        }
+        if (y > top) {
+          top = y;
+        }
+        if (y < bottom) {
+          bottom = y;
+        }
+      }
+    }
+
+    if (
+      left === Number.POSITIVE_INFINITY ||
+      right === Number.NEGATIVE_INFINITY ||
+      top === Number.NEGATIVE_INFINITY ||
+      bottom === Number.POSITIVE_INFINITY
+    ) {
+      return null;
+    }
+
+    return { left, right, top, bottom };
+  }
+
   /**
    * model3.jsonが置かれたディレクトリとファイルパスからモデルを生成する
    * @param dir

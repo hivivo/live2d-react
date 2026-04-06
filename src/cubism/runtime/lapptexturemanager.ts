@@ -13,6 +13,12 @@ import { LAppGlManager } from './lappglmanager';
  * 画像読み込み、管理を行うクラス。
  */
 export class LAppTextureManager {
+  private configureImage(img: HTMLImageElement): HTMLImageElement {
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    return img;
+  }
+
   /**
    * コンストラクタ
    */
@@ -51,7 +57,7 @@ export class LAppTextureManager {
         // 2回目以降はキャッシュが使用される(待ち時間なし)
         // WebKitでは同じImageのonloadを再度呼ぶには再インスタンスが必要
         // 詳細：https://stackoverflow.com/a/5024181
-        this._textures[i].img = new Image();
+        this._textures[i].img = this.configureImage(new Image());
         this._textures[i].img.addEventListener(
           'load',
           (): void => callback(this._textures[i]),
@@ -65,7 +71,7 @@ export class LAppTextureManager {
     }
 
     // データのオンロードをトリガーにする
-    const img = new Image();
+    const img = this.configureImage(new Image());
     img.addEventListener(
       'load',
       (): void => {

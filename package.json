@@ -16,7 +16,9 @@
   },
   "scripts": {
     "dev": "vite",
+    "build:demo": "vite build",
     "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-framework.mjs",
+    "build:all": "npm run build && npm run build:demo",
     "prepare": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
