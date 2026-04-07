@@ -15,6 +15,11 @@ on:
   push:
     branches:
       - main
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -81,13 +86,19 @@ jobs:
         run: gh pr merge "${{ steps.release_pr.outputs.pull-request-number }}" --auto --squash
 
   publish_release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request_target' &&
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.merge_commit_sha || github.sha }}
           fetch-depth: 0
 
       - name: Read package metadata
@@ -101,8 +112,14 @@ jobs:
       - name: Read previous package version
         id: previous
         run: |
-          if git cat-file -e "${{ github.event.before }}:package.json" 2>/dev/null; then
-            VERSION=$(git show "${{ github.event.before }}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            PREVIOUS_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            PREVIOUS_REF="${{ github.event.before }}"
+          fi
+
+          if git cat-file -e "${PREVIOUS_REF}:package.json" 2>/dev/null; then
+            VERSION=$(git show "${PREVIOUS_REF}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           else
             echo "version=" >> "$GITHUB_OUTPUT"
