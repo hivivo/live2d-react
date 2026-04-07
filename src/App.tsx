@@ -15,9 +15,9 @@ type ModelPreset = {
 
 type SnippetInput = Live2DRenderOptions & { modelJsonPath: string };
 
-const embeddedCoreScriptSrc = '/cubism/core/live2dcubismcore.min.js';
 const usageCoreScriptSrc = '<Your Live2D Cubism Core Url>';
 const defaultModelJsonPath = '/models/Hiyori/Hiyori.model3.json';
+const demoBasePath = import.meta.env.BASE_URL;
 const fitModes: FitMode[] = ['none', 'contain', 'cover', 'width', 'height'];
 const anchorXOptions: AnchorX[] = ['left', 'center', 'right'];
 const anchorYOptions: AnchorY[] = ['top', 'center', 'bottom'];
@@ -42,6 +42,31 @@ const modelPresets: ModelPreset[] = [
 
 function formatNumber(value: number) {
   return Number.parseFloat(value.toFixed(2)).toString();
+}
+
+function resolveDemoAssetPath(path: string) {
+  if (
+    path.startsWith('http://') ||
+    path.startsWith('https://') ||
+    path.startsWith('data:') ||
+    path.startsWith('blob:')
+  ) {
+    return path;
+  }
+
+  const normalizedBasePath = demoBasePath.endsWith('/')
+    ? demoBasePath
+    : `${demoBasePath}/`;
+
+  if (path.startsWith(normalizedBasePath)) {
+    return path;
+  }
+
+  if (path.startsWith('/')) {
+    return `${normalizedBasePath}${path.slice(1)}`;
+  }
+
+  return `${normalizedBasePath}${path}`;
 }
 
 function buildRenderOptions({
@@ -153,6 +178,14 @@ function App() {
       }),
     [modelJsonPath, renderOptions]
   );
+  const resolvedModelJsonPath = useMemo(
+    () => resolveDemoAssetPath(modelJsonPath),
+    [modelJsonPath]
+  );
+  const embeddedCoreScriptSrc = useMemo(
+    () => resolveDemoAssetPath('/cubism/core/live2dcubismcore.min.js'),
+    []
+  );
 
   const handlePresetSelect = (preset: ModelPreset) => {
     setSelectedPresetId(preset.id);
@@ -230,7 +263,7 @@ function App() {
               <div className="viewer-stage">
                 <Live2D
                   key={viewerKey}
-                  modelJsonPath={modelJsonPath}
+                  modelJsonPath={resolvedModelJsonPath}
                   coreScriptSrc={embeddedCoreScriptSrc}
                   renderOptions={renderOptions}
                   style={{ width: '100%', height: '100%' }}
