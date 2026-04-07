@@ -90,8 +90,7 @@ jobs:
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'pull_request_target' &&
         github.event.pull_request.merged == true &&
-        github.event.pull_request.base.ref == 'main' &&
-        startsWith(github.event.pull_request.head.ref, 'release/'))
+        github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
 
     steps:
@@ -109,22 +108,6 @@ jobs:
           echo "name=${NAME}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Read previous package version
-        id: previous
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            PREVIOUS_REF="${{ github.event.pull_request.base.sha }}"
-          else
-            PREVIOUS_REF="${{ github.event.before }}"
-          fi
-
-          if git cat-file -e "${PREVIOUS_REF}:package.json" 2>/dev/null; then
-            VERSION=$(git show "${PREVIOUS_REF}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Check for existing tag
         id: tag
         run: |
@@ -134,27 +117,59 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Check npm for published version
+      - name: Read npm latest version
         id: npm
         run: |
-          if npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
+          if npm view "${{ steps.package.outputs.name }}" version >/dev/null 2>&1; then
+            VERSION=$(npm view "${{ steps.package.outputs.name }}" version)
+            echo "latest=${VERSION}" >> "$GITHUB_OUTPUT"
           else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "latest=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Decide whether to publish
         id: release
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          NPM_LATEST_VERSION: ${{ steps.npm.outputs.latest }}
         run: |
-          if [ "${{ steps.previous.outputs.version }}" = "${{ steps.package.outputs.version }}" ]; then
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            echo "Package version did not change on this push."
-          elif [ "${{ steps.tag.outputs.exists }}" = "true" ] || [ "${{ steps.npm.outputs.exists }}" = "true" ]; then
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            echo "Version v${{ steps.package.outputs.version }} is already released."
+          SHOULD_PUBLISH=$(node <<'EOF'
+          const parse = version => version.split('.').map(part => Number.parseInt(part, 10));
+          const current = process.env.PACKAGE_VERSION;
+          const latest = process.env.NPM_LATEST_VERSION;
+
+          if (!latest) {
+            console.log('true');
+            process.exit(0);
+          }
+
+          const currentParts = parse(current);
+          const latestParts = parse(latest);
+          const maxLength = Math.max(currentParts.length, latestParts.length);
+
+          for (let index = 0; index < maxLength; index += 1) {
+            const currentPart = currentParts[index] ?? 0;
+            const latestPart = latestParts[index] ?? 0;
+            if (currentPart > latestPart) {
+              console.log('true');
+              process.exit(0);
+            }
+            if (currentPart < latestPart) {
+              console.log('false');
+              process.exit(0);
+            }
+          }
+
+          console.log('false');
+          EOF
+          )
+
+          echo "should_publish=${SHOULD_PUBLISH}" >> "$GITHUB_OUTPUT"
+
+          if [ "${SHOULD_PUBLISH}" = "true" ]; then
+            echo "Package version v${PACKAGE_VERSION} is newer than npm latest v${NPM_LATEST_VERSION:-none} and will be released."
           else
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "Version changed from v${{ steps.previous.outputs.version }} to v${{ steps.package.outputs.version }} and will be released."
+            echo "Package version v${PACKAGE_VERSION} is not newer than npm latest v${NPM_LATEST_VERSION:-none}; skipping publish."
           fi
 
       - name: Set up Node.js
@@ -178,11 +193,11 @@ jobs:
         run: npm run build
 
       - name: Create tag
-        if: steps.release.outputs.should_publish == 'true'
+        if: steps.release.outputs.should_publish == 'true' && steps.tag.outputs.exists != 'true'
         run: git tag "v${{ steps.package.outputs.version }}"
 
       - name: Push tag
-        if: steps.release.outputs.should_publish == 'true'
+        if: steps.release.outputs.should_publish == 'true' && steps.tag.outputs.exists != 'true'
         run: git push origin "v${{ steps.package.outputs.version }}"
 
       - name: Create GitHub release
