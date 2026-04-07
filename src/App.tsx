@@ -21,6 +21,15 @@ const demoBasePath = import.meta.env.BASE_URL;
 const fitModes: FitMode[] = ['none', 'contain', 'cover', 'width', 'height'];
 const anchorXOptions: AnchorX[] = ['left', 'center', 'right'];
 const anchorYOptions: AnchorY[] = ['top', 'center', 'bottom'];
+const installSnippet = `npm install live2d-react`;
+const minimalUsageSnippet = `import { Live2D } from 'live2d-react';
+
+<Live2D
+  modelJsonPath="/models/Hiyori/Hiyori.model3.json"
+  coreScriptSrc="/cubism/core/live2dcubismcore.min.js"
+  style={{ width: 420, height: 420 }}
+/>;
+`;
 
 const modelPresets: ModelPreset[] = [
   {
@@ -39,6 +48,72 @@ const modelPresets: ModelPreset[] = [
     modelJsonPath: ''
   }
 ];
+
+const propDocs = [
+  {
+    name: 'modelJsonPath',
+    description: "Required path or URL to the model's .model3.json file."
+  },
+  {
+    name: 'coreScriptSrc',
+    description: 'Required URL to live2dcubismcore.min.js.'
+  },
+  {
+    name: 'style',
+    description: 'Wrapper sizing. Set width and height here for the stage.'
+  },
+  {
+    name: 'canvasStyle',
+    description: 'Optional styling applied directly to the internal canvas.'
+  },
+  {
+    name: 'idleMotionGroup',
+    description: "Optional motion group name. Defaults to 'Idle'."
+  },
+  {
+    name: 'tapBodyMotionGroup',
+    description: "Optional tap motion group name. Defaults to 'TapBody'."
+  },
+  {
+    name: 'headHitAreaName',
+    description: "Optional hit area name. Defaults to 'Head'."
+  },
+  {
+    name: 'bodyHitAreaName',
+    description: "Optional hit area name. Defaults to 'Body'."
+  },
+  {
+    name: 'renderOptions',
+    description: 'Optional fitting, anchoring, offset, and zoom controls.'
+  }
+] as const;
+
+const renderOptionDocs = [
+  {
+    name: 'fitMode',
+    description: "How the model should scale in the stage: 'none', 'contain', 'cover', 'width', or 'height'."
+  },
+  {
+    name: 'anchorX',
+    description: "Horizontal placement: 'left', 'center', or 'right'."
+  },
+  {
+    name: 'anchorY',
+    description: "Vertical placement: 'top', 'center', or 'bottom'."
+  },
+  {
+    name: 'offsetX',
+    description: 'Extra horizontal adjustment after fitting and anchoring.'
+  },
+  {
+    name: 'offsetY',
+    description: 'Extra vertical adjustment after fitting and anchoring.'
+  },
+  {
+    name: 'zoom',
+    description: 'Extra scale multiplier applied after fitMode.'
+  }
+] as const;
 
 function formatNumber(value: number) {
   return Number.parseFloat(value.toFixed(2)).toString();
@@ -419,6 +494,82 @@ function App() {
 
           </div>
         </div>
+      </section>
+
+      <section className="docs-grid">
+        <article className="docs-card">
+          <div className="panel-header">
+            <div>
+              <p className="section-kicker">Guide</p>
+              <h2>Usage Guide</h2>
+            </div>
+            <p>Start from the basic setup, then add grounding controls only when you need them.</p>
+          </div>
+
+          <div className="docs-stack">
+            <div className="doc-block">
+              <h3>1. Install</h3>
+              <pre>{installSnippet}</pre>
+            </div>
+
+            <div className="doc-block">
+              <h3>2. Host your assets</h3>
+              <ul className="docs-list">
+                <li>Serve `live2dcubismcore.min.js` from your own app.</li>
+                <li>Serve your model folder so the `.model3.json` and textures stay reachable.</li>
+                <li>Use public URLs or same-origin paths that the browser can fetch directly.</li>
+              </ul>
+            </div>
+
+            <div className="doc-block">
+              <h3>3. Render a model</h3>
+              <pre>{minimalUsageSnippet}</pre>
+            </div>
+
+            <div className="doc-block">
+              <h3>4. Normalize multiple models</h3>
+              <p className="doc-copy">
+                A good starting point for keeping different characters on the same floor line is
+                `fitMode: 'height'` with `anchorY: 'bottom'`, then small `offsetY` and `zoom`
+                adjustments if needed.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article className="docs-card">
+          <div className="panel-header">
+            <div>
+              <p className="section-kicker">Reference</p>
+              <h2>API Reference</h2>
+            </div>
+            <p>The main API stays small. Most apps only need `modelJsonPath` and `coreScriptSrc`.</p>
+          </div>
+
+          <div className="api-section">
+            <h3>`Live2D` props</h3>
+            <dl className="api-list">
+              {propDocs.map(item => (
+                <div key={item.name} className="api-row">
+                  <dt>{item.name}</dt>
+                  <dd>{item.description}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="api-section">
+            <h3>`renderOptions`</h3>
+            <dl className="api-list">
+              {renderOptionDocs.map(item => (
+                <div key={item.name} className="api-row">
+                  <dt>{item.name}</dt>
+                  <dd>{item.description}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </article>
       </section>
     </main>
   );
