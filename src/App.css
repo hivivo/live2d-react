@@ -9,7 +9,8 @@
 .hero-panel,
 .viewer-card,
 .controls-card,
-.code-card {
+.code-card,
+.docs-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
   background:
@@ -100,7 +101,8 @@
 
 .viewer-card,
 .controls-card,
-.code-card {
+.code-card,
+.docs-card {
   padding: 1.15rem;
 }
 
@@ -258,8 +260,97 @@
   color: rgba(245, 239, 230, 0.74);
 }
 
+.docs-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.docs-card {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.docs-stack,
+.api-section {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.doc-block {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.doc-block h3,
+.api-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.doc-block pre {
+  margin: 0;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #ffe8db;
+  white-space: pre-wrap;
+}
+
+.docs-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.45rem;
+  color: rgba(245, 239, 230, 0.82);
+}
+
+.doc-copy {
+  margin: 0;
+  color: rgba(245, 239, 230, 0.82);
+  line-height: 1.45;
+}
+
+.api-list {
+  margin: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.api-row {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.api-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.api-row dt {
+  font-weight: 700;
+  color: #ffe8db;
+}
+
+.api-row dd {
+  margin: 0;
+  color: rgba(245, 239, 230, 0.74);
+  line-height: 1.4;
+}
+
 @media (max-width: 1100px) {
   .playground-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-grid {
     grid-template-columns: 1fr;
   }
 
@@ -281,7 +372,8 @@
   .hero-panel,
   .viewer-card,
   .controls-card,
-  .code-card {
+  .code-card,
+  .docs-card {
     border-radius: 22px;
   }
 
